@@ -71,12 +71,14 @@ mod de_borrowed;
 mod de_owned;
 mod ser;
 
-#[cfg(feature = "std")]
-pub use self::compat::deserialize_from;
 pub use self::compat::{
     DefaultOptions, Options, deserialize, deserialize_from_reader, deserialize_in_place, options,
-    serialize, serialize_into, serialized_size,
+    serialized_size,
 };
+#[cfg(feature = "alloc")]
+pub use self::compat::serialize;
+#[cfg(feature = "std")]
+pub use self::compat::{deserialize_from, serialize_into};
 pub use self::de_borrowed::*;
 pub use self::de_owned::*;
 pub use self::ser::*;

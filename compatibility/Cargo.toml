@@ -6,6 +6,6 @@ rust-version = "1.93.0"
 publish = false
 
 [dependencies]
-bincode = { path = "..", features = ["serde"] }
+bincode = { git = "https://github.com/earthlings-dev/bincode.git", features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 rand = { workspace = true }

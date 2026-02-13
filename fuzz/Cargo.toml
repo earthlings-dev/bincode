@@ -14,7 +14,7 @@ libfuzzer-sys = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 
 [dependencies.bincode]
-path = ".."
+git = "https://github.com/earthlings-dev/bincode.git"
 
 # Prevent this from interfering with workspaces
 [workspace]
