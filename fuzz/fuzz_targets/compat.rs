@@ -8,6 +8,8 @@ use std::num::{NonZeroI128, NonZeroI32, NonZeroU128, NonZeroU32};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
+use bincode::Options;
+
 #[derive(
     bincode::Decode,
     bincode::Encode,
@@ -45,33 +47,35 @@ enum AllTypes {
     I8(i8),
     U128(u128),
     U8(u8),
-    // Cow(Cow<'static, [u8]>), Blocked, see comment on decode
 }
 
 fuzz_target!(|data: &[u8]| {
     let config = bincode::config::legacy().with_limit::<1024>();
-    #[allow(deprecated)]
-    let mut configv1 = bincodev1::config();
-    configv1.limit(1024);
-    let bincode_v1: Result<AllTypes, _> = configv1.deserialize_from(data);
-    let bincode_v2: Result<(AllTypes, _), _> = bincode::decode_from_slice(data, config);
 
-    match (&bincode_v1, &bincode_v2) {
-        (Err(e), _) if e.to_string() == "the size limit has been reached" => {}
-        (_, Err(bincode::error::DecodeError::LimitExceeded)) => {}
-        (Ok(bincode_v1), Ok((bincode_v2, _))) if bincode_v1 != bincode_v2 => {
-            println!("Bytes:      {:?}", data);
-            println!("Bincode V1: {:?}", bincode_v1);
-            println!("Bincode V2: {:?}", bincode_v2);
-            panic!("failed equality check");
+    // v1 compat API (Options::deserialize uses serde internally)
+    let compat_result: Result<AllTypes, _> = config.deserialize(data);
+    // v2 native API (decode_from_slice uses bincode::Decode)
+    let native_result: Result<(AllTypes, _), _> = bincode::decode_from_slice(data, config);
+
+    match (&compat_result, &native_result) {
+        // Either hitting the limit is fine
+        (Err(bincode::error::DecodeError::LimitExceeded), _)
+        | (_, Err(bincode::error::DecodeError::LimitExceeded)) => {}
+        // Both succeed — values must match
+        (Ok(compat_val), Ok((native_val, _))) if compat_val != native_val => {
+            println!("Bytes:        {:?}", data);
+            println!("v1 compat:    {:?}", compat_val);
+            println!("v2 native:    {:?}", native_val);
+            panic!("v1 compat and v2 native decoded different values");
         }
+        // One succeeds, one fails — mismatch
         (Ok(_), Err(_)) | (Err(_), Ok(_)) => {
-            println!("Bytes:      {:?}", data);
-            println!("Bincode V1: {:?}", bincode_v1);
-            println!("Bincode V2: {:?}", bincode_v2);
-            panic!("failed equality check");
+            println!("Bytes:        {:?}", data);
+            println!("v1 compat:    {:?}", compat_result);
+            println!("v2 native:    {:?}", native_result);
+            panic!("one API succeeded while the other failed");
         }
-
+        // Both succeed with equal values, or both fail — fine
         _ => {}
     }
 });

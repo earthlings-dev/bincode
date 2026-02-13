@@ -1,7 +1,7 @@
 use super::EncodeError as SerdeEncodeError;
 use crate::{
     config::Config,
-    enc::{write::Writer, Encode, Encoder},
+    enc::{Encode, Encoder, write::Writer},
     error::EncodeError,
 };
 #[cfg(feature = "alloc")]
@@ -115,10 +115,8 @@ where
         v.encode(self.enc)
     }
 
-    serde::serde_if_integer128! {
-        fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
-            v.encode(self.enc)
-        }
+    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+        v.encode(self.enc)
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
@@ -137,10 +135,8 @@ where
         v.encode(self.enc)
     }
 
-    serde::serde_if_integer128! {
-        fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
-            v.encode(self.enc)
-        }
+    fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
+        v.encode(self.enc)
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
@@ -218,7 +214,9 @@ where
     }
 
     fn serialize_seq(mut self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        let len = len.ok_or_else(|| SerdeEncodeError::SequenceMustHaveLength.into())?;
+        let len = len.ok_or(crate::error::EncodeError::Serde(
+            SerdeEncodeError::SequenceMustHaveLength,
+        ))?;
         len.encode(&mut self.enc)?;
         Ok(Compound { enc: self.enc })
     }
@@ -247,7 +245,9 @@ where
     }
 
     fn serialize_map(mut self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        let len = len.ok_or_else(|| SerdeEncodeError::SequenceMustHaveLength.into())?;
+        let len = len.ok_or(crate::error::EncodeError::Serde(
+            SerdeEncodeError::SequenceMustHaveLength,
+        ))?;
         len.encode(&mut self.enc)?;
         Ok(Compound { enc: self.enc })
     }
@@ -276,7 +276,9 @@ where
     where
         T: core::fmt::Display + ?Sized,
     {
-        Err(SerdeEncodeError::CannotCollectStr.into())
+        Err(crate::error::EncodeError::Serde(
+            SerdeEncodeError::CannotCollectStr,
+        ))
     }
 
     fn is_human_readable(&self) -> bool {

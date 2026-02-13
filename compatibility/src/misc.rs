@@ -88,7 +88,6 @@ fn test_arrays() {
 }
 
 #[derive(
-    bincode_2::Encode, bincode_2::Decode, serde::Serialize, serde::Deserialize, Debug, PartialEq,
+    bincode::Encode, bincode::Decode, serde::Serialize, serde::Deserialize, Debug, PartialEq,
 )]
-#[bincode(crate = "bincode_2")]
 struct TupleS(f32, f32, f32);

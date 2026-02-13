@@ -404,23 +404,38 @@ fn test_enum_with_generics_roundtrip() {
 }
 
 mod derive_with_polluted_scope {
-    #[allow(dead_code)]
-    #[allow(non_snake_case)]
+    // These functions intentionally shadow Result::Ok and Result::Err to verify
+    // that the derive macro uses qualified paths.
+    #[allow(dead_code, non_snake_case)]
     fn Ok() {}
 
-    #[allow(dead_code)]
-    #[allow(non_snake_case)]
+    #[allow(dead_code, non_snake_case)]
     fn Err() {}
 
-    #[derive(bincode::Encode, bincode::Decode)]
+    #[derive(Debug, PartialEq, bincode::Encode, bincode::Decode)]
     struct A {
         a: u32,
     }
 
-    #[derive(bincode::Encode, bincode::Decode)]
+    #[derive(Debug, PartialEq, bincode::Encode, bincode::Decode)]
     enum B {
         A,
         B,
+    }
+
+    #[test]
+    fn roundtrip_with_polluted_scope() {
+        let config = bincode::config::standard();
+
+        let a = A { a: 42 };
+        let encoded = bincode::encode_to_vec(&a, config).unwrap();
+        let (decoded, _): (A, _) = bincode::decode_from_slice(&encoded, config).unwrap();
+        assert_eq!(a, decoded);
+
+        let b = B::B;
+        let encoded = bincode::encode_to_vec(&b, config).unwrap();
+        let (decoded, _): (B, _) = bincode::decode_from_slice(&encoded, config).unwrap();
+        assert_eq!(b, decoded);
     }
 }
 

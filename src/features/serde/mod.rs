@@ -66,10 +66,17 @@
 //! [Encode]: ../enc/trait.Encode.html
 //! [`unty`]: https://crates.io/crates/unty
 
+pub mod compat;
 mod de_borrowed;
 mod de_owned;
 mod ser;
 
+#[cfg(feature = "std")]
+pub use self::compat::deserialize_from;
+pub use self::compat::{
+    DefaultOptions, Options, deserialize, deserialize_from_reader, deserialize_in_place, options,
+    serialize, serialize_into, serialized_size,
+};
 pub use self::de_borrowed::*;
 pub use self::de_owned::*;
 pub use self::ser::*;
@@ -123,14 +130,7 @@ impl serde::de::Error for crate::error::DecodeError {
     where
         T: core::fmt::Display,
     {
-        DecodeError::CustomError.into()
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<crate::error::DecodeError> for DecodeError {
-    fn into(self) -> crate::error::DecodeError {
-        crate::error::DecodeError::Serde(self)
+        crate::error::DecodeError::Serde(DecodeError::CustomError)
     }
 }
 
@@ -148,13 +148,6 @@ pub enum EncodeError {
     /// Custom serde error but bincode is unable to allocate a string. Set a breakpoint where this is thrown for more information.
     #[cfg(not(feature = "alloc"))]
     CustomError,
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<crate::error::EncodeError> for EncodeError {
-    fn into(self) -> crate::error::EncodeError {
-        crate::error::EncodeError::Serde(self)
-    }
 }
 
 #[cfg(feature = "alloc")]
@@ -178,7 +171,7 @@ impl serde::ser::Error for crate::error::EncodeError {
     where
         T: core::fmt::Display,
     {
-        EncodeError::CustomError.into()
+        crate::error::EncodeError::Serde(EncodeError::CustomError)
     }
 }
 

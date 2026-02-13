@@ -33,10 +33,11 @@ use core::marker::PhantomData;
 /// [with_fixed_int_encoding]: #method.with_fixed_int_encoding
 /// [with_variable_int_encoding]: #method.with_variable_int_encoding
 #[derive(Copy, Clone, Debug)]
-pub struct Configuration<E = LittleEndian, I = Varint, L = NoLimit> {
+pub struct Configuration<E = LittleEndian, I = Varint, L = NoLimit, T = AllowTrailing> {
     _e: PhantomData<E>,
     _i: PhantomData<I>,
     _l: PhantomData<L>,
+    _t: PhantomData<T>,
 }
 
 // When adding more features to configuration, follow these steps:
@@ -63,28 +64,34 @@ pub const fn legacy() -> Configuration<LittleEndian, Fixint, NoLimit> {
     generate()
 }
 
-impl<E, I, L> Default for Configuration<E, I, L> {
+impl<E, I, L, T> Default for Configuration<E, I, L, T> {
     fn default() -> Self {
         generate()
     }
 }
 
-const fn generate<E, I, L>() -> Configuration<E, I, L> {
+const fn generate<E, I, L, T>() -> Configuration<E, I, L, T> {
     Configuration {
         _e: PhantomData,
         _i: PhantomData,
         _l: PhantomData,
+        _t: PhantomData,
     }
 }
 
-impl<E, I, L> Configuration<E, I, L> {
+impl<E, I, L, T> Configuration<E, I, L, T> {
     /// Makes bincode encode all integer types in big endian.
-    pub const fn with_big_endian(self) -> Configuration<BigEndian, I, L> {
+    pub const fn with_big_endian(self) -> Configuration<BigEndian, I, L, T> {
         generate()
     }
 
     /// Makes bincode encode all integer types in little endian.
-    pub const fn with_little_endian(self) -> Configuration<LittleEndian, I, L> {
+    pub const fn with_little_endian(self) -> Configuration<LittleEndian, I, L, T> {
+        generate()
+    }
+
+    /// Makes bincode encode all integer types in the native endian of the target platform.
+    pub const fn with_native_endian(self) -> Configuration<NativeEndian, I, L, T> {
         generate()
     }
 
@@ -144,7 +151,7 @@ impl<E, I, L> Configuration<E, I, L> {
     ///
     /// Note that u256 and the like are unsupported by this format; if and when they are added to the
     /// language, they may be supported via the extension point given by the 255 byte.
-    pub const fn with_variable_int_encoding(self) -> Configuration<E, Varint, L> {
+    pub const fn with_variable_int_encoding(self) -> Configuration<E, Varint, L, T> {
         generate()
     }
 
@@ -153,24 +160,49 @@ impl<E, I, L> Configuration<E, I, L> {
     /// * Fixed size integers are encoded directly
     /// * Enum discriminants are encoded as u32
     /// * Lengths and usize are encoded as u64
-    pub const fn with_fixed_int_encoding(self) -> Configuration<E, Fixint, L> {
+    pub const fn with_fixed_int_encoding(self) -> Configuration<E, Fixint, L, T> {
         generate()
     }
 
     /// Sets the byte limit to `limit`.
-    pub const fn with_limit<const N: usize>(self) -> Configuration<E, I, Limit<N>> {
+    pub const fn with_limit<const N: usize>(self) -> Configuration<E, I, Limit<N>, T> {
         generate()
     }
 
     /// Clear the byte limit.
-    pub const fn with_no_limit(self) -> Configuration<E, I, NoLimit> {
+    pub const fn with_no_limit(self) -> Configuration<E, I, NoLimit, T> {
+        generate()
+    }
+
+    /// Reject trailing bytes when deserializing from a slice.
+    ///
+    /// When this is set, slice-based deserialization via the [`Options`] trait
+    /// will return an error if not all bytes in the slice were consumed.
+    ///
+    /// [`Options`]: crate::Options
+    pub const fn reject_trailing_bytes(self) -> Configuration<E, I, L, RejectTrailing> {
+        generate()
+    }
+
+    /// Allow trailing bytes when deserializing from a slice.
+    ///
+    /// When this is set, slice-based deserialization via the [`Options`] trait
+    /// will silently ignore any bytes remaining after deserialization.
+    ///
+    /// [`Options`]: crate::Options
+    pub const fn allow_trailing_bytes(self) -> Configuration<E, I, L, AllowTrailing> {
         generate()
     }
 }
 
 /// Indicates a type is valid for controlling the bincode configuration
 pub trait Config:
-    InternalEndianConfig + InternalIntEncodingConfig + InternalLimitConfig + Copy + Clone
+    InternalEndianConfig
+    + InternalIntEncodingConfig
+    + InternalLimitConfig
+    + InternalTrailingConfig
+    + Copy
+    + Clone
 {
     /// This configuration's Endianness
     fn endianness(&self) -> Endianness;
@@ -180,22 +212,34 @@ pub trait Config:
 
     /// This configuration's byte limit, or `None` if no limit is configured
     fn limit(&self) -> Option<usize>;
+
+    /// Whether this configuration rejects trailing bytes in slice deserialization
+    fn reject_trailing(&self) -> bool;
 }
 
-impl<T> Config for T
+impl<C> Config for C
 where
-    T: InternalEndianConfig + InternalIntEncodingConfig + InternalLimitConfig + Copy + Clone,
+    C: InternalEndianConfig
+        + InternalIntEncodingConfig
+        + InternalLimitConfig
+        + InternalTrailingConfig
+        + Copy
+        + Clone,
 {
     fn endianness(&self) -> Endianness {
-        <T as InternalEndianConfig>::ENDIAN
+        <C as InternalEndianConfig>::ENDIAN
     }
 
     fn int_encoding(&self) -> IntEncoding {
-        <T as InternalIntEncodingConfig>::INT_ENCODING
+        <C as InternalIntEncodingConfig>::INT_ENCODING
     }
 
     fn limit(&self) -> Option<usize> {
-        <T as InternalLimitConfig>::LIMIT
+        <C as InternalLimitConfig>::LIMIT
+    }
+
+    fn reject_trailing(&self) -> bool {
+        <C as InternalTrailingConfig>::TRAILING_REJECT
     }
 }
 
@@ -213,6 +257,18 @@ pub struct LittleEndian {}
 
 impl InternalEndianConfig for LittleEndian {
     const ENDIAN: Endianness = Endianness::Little;
+}
+
+/// Encodes all integer types in the native endian of the target platform.
+#[derive(Copy, Clone)]
+pub struct NativeEndian {}
+
+impl InternalEndianConfig for NativeEndian {
+    const ENDIAN: Endianness = if cfg!(target_endian = "big") {
+        Endianness::Big
+    } else {
+        Endianness::Little
+    };
 }
 
 /// Use fixed-size integer encoding.
@@ -245,6 +301,20 @@ impl<const N: usize> InternalLimitConfig for Limit<N> {
     const LIMIT: Option<usize> = Some(N);
 }
 
+/// Allows trailing bytes after deserialization from a slice.
+#[derive(Copy, Clone)]
+pub struct AllowTrailing {}
+impl InternalTrailingConfig for AllowTrailing {
+    const TRAILING_REJECT: bool = false;
+}
+
+/// Rejects trailing bytes after deserialization from a slice.
+#[derive(Copy, Clone)]
+pub struct RejectTrailing {}
+impl InternalTrailingConfig for RejectTrailing {
+    const TRAILING_REJECT: bool = true;
+}
+
 /// Endianness of a `Configuration`.
 #[derive(PartialEq, Eq)]
 #[non_exhaustive]
@@ -272,7 +342,7 @@ mod internal {
         const ENDIAN: Endianness;
     }
 
-    impl<E: InternalEndianConfig, I, L> InternalEndianConfig for Configuration<E, I, L> {
+    impl<E: InternalEndianConfig, I, L, T> InternalEndianConfig for Configuration<E, I, L, T> {
         const ENDIAN: Endianness = E::ENDIAN;
     }
 
@@ -280,7 +350,9 @@ mod internal {
         const INT_ENCODING: IntEncoding;
     }
 
-    impl<E, I: InternalIntEncodingConfig, L> InternalIntEncodingConfig for Configuration<E, I, L> {
+    impl<E, I: InternalIntEncodingConfig, L, T> InternalIntEncodingConfig
+        for Configuration<E, I, L, T>
+    {
         const INT_ENCODING: IntEncoding = I::INT_ENCODING;
     }
 
@@ -288,7 +360,15 @@ mod internal {
         const LIMIT: Option<usize>;
     }
 
-    impl<E, I, L: InternalLimitConfig> InternalLimitConfig for Configuration<E, I, L> {
+    impl<E, I, L: InternalLimitConfig, T> InternalLimitConfig for Configuration<E, I, L, T> {
         const LIMIT: Option<usize> = L::LIMIT;
+    }
+
+    pub trait InternalTrailingConfig {
+        const TRAILING_REJECT: bool;
+    }
+
+    impl<E, I, L, T: InternalTrailingConfig> InternalTrailingConfig for Configuration<E, I, L, T> {
+        const TRAILING_REJECT: bool = T::TRAILING_REJECT;
     }
 }
