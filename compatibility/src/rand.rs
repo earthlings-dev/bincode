@@ -4,21 +4,18 @@
 
 use rand::RngExt;
 
-#[derive(
-    Debug, bincode::Encode, bincode::Decode, serde::Serialize, serde::Deserialize, PartialEq, Eq,
-)]
+#[derive(Debug, bincode::Encode, bincode::Decode, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct Lcg64Xsh32 {
-    state: u64,
-    increment: u64,
+  state:     u64,
+  increment: u64,
 }
 
 #[test]
 pub fn test() {
-    let mut rng = rand::rng();
-    for _ in 0..1000 {
-        crate::test_same(Lcg64Xsh32 {
-            state: rng.random(),
-            increment: rng.random(),
-        });
-    }
+  let mut rng = rand::rng();
+  for _ in 0..1000 {
+    crate::test_same(Lcg64Xsh32 {
+      state: rng.random(), increment: rng.random()
+    });
+  }
 }

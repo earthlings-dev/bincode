@@ -11,7 +11,8 @@
 //!
 //! # Serde
 //!
-//! Serde is an optional dependency. To use serde, enable the `serde` feature. See [Features](#features) for more information.
+//! Serde is an optional dependency. To use serde, enable the `serde` feature. See
+//! [Features](#features) for more information.
 //!
 //! # Features
 //!
@@ -69,7 +70,6 @@
 //!
 //! [`fs::File`]: std::fs::File
 //! [`net::TcpStream`]: std::net::TcpStream
-//!
 
 #![doc(html_root_url = "https://docs.rs/bincode/4.0.0")]
 #![crate_name = "bincode"]
@@ -85,15 +85,10 @@ mod features;
 pub(crate) mod utils;
 pub(crate) mod varint;
 
-use de::{Decoder, read::Reader};
+use de::Decoder;
+use de::read::Reader;
 use enc::write::Writer;
-
-#[cfg(any(
-    feature = "alloc",
-    feature = "std",
-    feature = "derive",
-    feature = "serde"
-))]
+#[cfg(any(feature = "alloc", feature = "std", feature = "derive", feature = "serde"))]
 pub use features::*;
 
 pub mod config;
@@ -102,25 +97,21 @@ pub mod de;
 pub mod enc;
 pub mod error;
 
-pub use de::{BorrowDecode, Decode};
-pub use enc::Encode;
-
 use config::Config;
+pub use de::BorrowDecode;
+pub use de::Decode;
+pub use enc::Encode;
 
 /// Encode the given value into the given slice. Returns the amount of bytes that have been written.
 ///
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
-pub fn encode_into_slice<E: enc::Encode, C: Config>(
-    val: E,
-    dst: &mut [u8],
-    config: C,
-) -> Result<usize, error::EncodeError> {
-    let writer = enc::write::SliceWriter::new(dst);
-    let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
-    val.encode(&mut encoder)?;
-    Ok(encoder.into_writer().bytes_written())
+pub fn encode_into_slice<E: enc::Encode, C: Config>(val: E, dst: &mut [u8], config: C) -> Result<usize, error::EncodeError> {
+  let writer = enc::write::SliceWriter::new(dst);
+  let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
+  val.encode(&mut encoder)?;
+  Ok(encoder.into_writer().bytes_written())
 }
 
 /// Encode the given value into a custom [Writer].
@@ -128,81 +119,75 @@ pub fn encode_into_slice<E: enc::Encode, C: Config>(
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
-pub fn encode_into_writer<E: enc::Encode, W: Writer, C: Config>(
-    val: E,
-    writer: W,
-    config: C,
-) -> Result<(), error::EncodeError> {
-    let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
-    val.encode(&mut encoder)?;
-    Ok(())
+pub fn encode_into_writer<E: enc::Encode, W: Writer, C: Config>(val: E, writer: W, config: C) -> Result<(), error::EncodeError> {
+  let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
+  val.encode(&mut encoder)?;
+  Ok(())
 }
 
-/// Attempt to decode a given type `D` from the given slice. Returns the decoded output and the amount of bytes read.
+/// Attempt to decode a given type `D` from the given slice. Returns the decoded output and the
+/// amount of bytes read.
 ///
-/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [borrow_decode_from_slice].
+/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use
+/// [borrow_decode_from_slice].
 ///
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
-pub fn decode_from_slice<D: de::Decode<()>, C: Config>(
-    src: &[u8],
-    config: C,
-) -> Result<(D, usize), error::DecodeError> {
-    decode_from_slice_with_context(src, config, ())
+pub fn decode_from_slice<D: de::Decode<()>, C: Config>(src: &[u8], config: C) -> Result<(D, usize), error::DecodeError> {
+  decode_from_slice_with_context(src, config, ())
 }
 
-/// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded output and the amount of bytes read.
+/// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded
+/// output and the amount of bytes read.
 ///
-/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [borrow_decode_from_slice].
+/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use
+/// [borrow_decode_from_slice].
 ///
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
 pub fn decode_from_slice_with_context<Context, D: de::Decode<Context>, C: Config>(
-    src: &[u8],
-    config: C,
-    context: Context,
+  src: &[u8],
+  config: C,
+  context: Context,
 ) -> Result<(D, usize), error::DecodeError> {
-    let reader = de::read::SliceReader::new(src);
-    let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
-    let result = D::decode(&mut decoder)?;
-    let bytes_read = src.len() - decoder.reader().slice.len();
-    Ok((result, bytes_read))
+  let reader = de::read::SliceReader::new(src);
+  let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
+  let result = D::decode(&mut decoder)?;
+  let bytes_read = src.len() - decoder.reader().slice.len();
+  Ok((result, bytes_read))
 }
 
-/// Attempt to decode a given type `D` from the given slice. Returns the decoded output and the amount of bytes read.
+/// Attempt to decode a given type `D` from the given slice. Returns the decoded output and the
+/// amount of bytes read.
 ///
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
 pub fn borrow_decode_from_slice<'a, D: de::BorrowDecode<'a, ()>, C: Config>(
-    src: &'a [u8],
-    config: C,
+  src: &'a [u8],
+  config: C,
 ) -> Result<(D, usize), error::DecodeError> {
-    borrow_decode_from_slice_with_context(src, config, ())
+  borrow_decode_from_slice_with_context(src, config, ())
 }
 
-/// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded output and the amount of bytes read.
+/// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded
+/// output and the amount of bytes read.
 ///
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
-pub fn borrow_decode_from_slice_with_context<
-    'a,
-    Context,
-    D: de::BorrowDecode<'a, Context>,
-    C: Config,
->(
-    src: &'a [u8],
-    config: C,
-    context: Context,
+pub fn borrow_decode_from_slice_with_context<'a, Context, D: de::BorrowDecode<'a, Context>, C: Config>(
+  src: &'a [u8],
+  config: C,
+  context: Context,
 ) -> Result<(D, usize), error::DecodeError> {
-    let reader = de::read::SliceReader::new(src);
-    let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
-    let result = D::borrow_decode(&mut decoder)?;
-    let bytes_read = src.len() - decoder.reader().slice.len();
-    Ok((result, bytes_read))
+  let reader = de::read::SliceReader::new(src);
+  let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
+  let result = D::borrow_decode(&mut decoder)?;
+  let bytes_read = src.len() - decoder.reader().slice.len();
+  Ok((result, bytes_read))
 }
 
 /// Attempt to decode a given type `D` from the given [Reader].
@@ -210,28 +195,25 @@ pub fn borrow_decode_from_slice_with_context<
 /// See the [config] module for more information on configurations.
 ///
 /// [config]: config/index.html
-pub fn decode_from_reader<D: de::Decode<()>, R: Reader, C: Config>(
-    reader: R,
-    config: C,
-) -> Result<D, error::DecodeError> {
-    let mut decoder = de::DecoderImpl::<_, C, ()>::new(reader, config, ());
-    D::decode(&mut decoder)
+pub fn decode_from_reader<D: de::Decode<()>, R: Reader, C: Config>(reader: R, config: C) -> Result<D, error::DecodeError> {
+  let mut decoder = de::DecoderImpl::<_, C, ()>::new(reader, config, ());
+  D::decode(&mut decoder)
 }
 
-// TODO: Currently our doctests fail when trying to include the specs because the specs depend on `derive` and `alloc`.
-// But we want to have the specs in the docs always
+// TODO: Currently our doctests fail when trying to include the specs because the specs depend on
+// `derive` and `alloc`. But we want to have the specs in the docs always
 #[cfg(all(feature = "alloc", feature = "derive", doc))]
 pub mod spec {
-    #![doc = include_str!("../docs/spec.md")]
+  #![doc = include_str!("../docs/spec.md")]
 }
 
 #[cfg(doc)]
 pub mod migration_guide {
-    #![doc = include_str!("../docs/migration_guide.md")]
+  #![doc = include_str!("../docs/migration_guide.md")]
 }
 
 // Test the examples in readme.md
 #[cfg(all(feature = "alloc", feature = "derive", doctest))]
 mod readme {
-    #![doc = include_str!("../README.md")]
+  #![doc = include_str!("../README.md")]
 }

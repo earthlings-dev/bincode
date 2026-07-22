@@ -19,10 +19,22 @@ pub mod serde;
 
 // Re-export v1-compatible serde API at the crate root.
 #[cfg(feature = "serde")]
-pub use self::serde::compat::{
-    DefaultOptions, Options, deserialize, deserialize_from_reader, deserialize_in_place, options,
-};
+pub use self::serde::compat::DefaultOptions;
+#[cfg(feature = "serde")]
+pub use self::serde::compat::Options;
+#[cfg(feature = "serde")]
+pub use self::serde::compat::deserialize;
 #[cfg(all(feature = "serde", feature = "std"))]
-pub use self::serde::compat::{deserialize_from, serialize_into};
+pub use self::serde::compat::deserialize_from;
+#[cfg(feature = "serde")]
+pub use self::serde::compat::deserialize_from_reader;
+#[cfg(feature = "serde")]
+pub use self::serde::compat::deserialize_in_place;
+#[cfg(feature = "serde")]
+pub use self::serde::compat::options;
 #[cfg(all(feature = "serde", feature = "alloc"))]
-pub use self::serde::compat::{serialize, serialized_size};
+pub use self::serde::compat::serialize;
+#[cfg(all(feature = "serde", feature = "std"))]
+pub use self::serde::compat::serialize_into;
+#[cfg(all(feature = "serde", feature = "alloc"))]
+pub use self::serde::compat::serialized_size;

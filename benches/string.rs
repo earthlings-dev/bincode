@@ -1,76 +1,80 @@
 // https://github.com/bincode-org/bincode/issues/618
 
-use bincode::{Decode, Encode};
-use criterion::{Criterion, criterion_group, criterion_main};
-use serde::{Deserialize, Serialize};
 use std::hint::black_box;
+
+use bincode::Decode;
+use bincode::Encode;
+use criterion::Criterion;
+use criterion::criterion_group;
+use criterion::criterion_main;
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Default, Encode, Decode)]
 pub struct MyStruct {
-    pub v: Vec<String>,
-    pub string: String,
-    pub number: usize,
+  pub v:      Vec<String>,
+  pub string: String,
+  pub number: usize,
 }
 
 impl MyStruct {
-    #[inline]
-    pub fn new(v: Vec<String>, string: String, number: usize) -> Self {
-        Self { v, string, number }
+  #[inline]
+  pub fn new(v: Vec<String>, string: String, number: usize) -> Self {
+    Self {
+      v,
+      string,
+      number,
     }
+  }
 }
 
 fn build_data(size: usize) -> Vec<MyStruct> {
-    (0..size)
-        .map(|i| {
-            let vec: Vec<String> = (0..i).map(|i| i.to_string().repeat(100)).collect();
-            MyStruct::new(vec, size.to_string(), size)
-        })
-        .collect()
+  (0..size)
+    .map(|i| {
+      let vec: Vec<String> = (0..i).map(|i| i.to_string().repeat(100)).collect();
+      MyStruct::new(vec, size.to_string(), size)
+    })
+    .collect()
 }
 
 fn index_item_decode(c: &mut Criterion) {
-    let data = build_data(100);
+  let data = build_data(100);
 
-    c.bench_function("bench v1-compatible (legacy serde)", |b| {
-        b.iter(|| {
-            let _ = black_box(bincode::serialize(black_box(&data))).unwrap();
-        });
+  c.bench_function("bench v1-compatible (legacy serde)", |b| {
+    b.iter(|| {
+      let _ = black_box(bincode::serialize(black_box(&data))).unwrap();
     });
+  });
 
-    let config = bincode::config::standard();
-    c.bench_function("bench native (standard)", |b| {
-        b.iter(|| {
-            let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
-        });
+  let config = bincode::config::standard();
+  c.bench_function("bench native (standard)", |b| {
+    b.iter(|| {
+      let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
     });
+  });
 
-    let config = bincode::config::legacy();
-    c.bench_function("bench native (legacy)", |b| {
-        b.iter(|| {
-            let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
-        });
+  let config = bincode::config::legacy();
+  c.bench_function("bench native (legacy)", |b| {
+    b.iter(|| {
+      let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
     });
+  });
 
-    let encoded_legacy = bincode::serialize(&data).unwrap();
-    let encoded_native = bincode::encode_to_vec(&data, config).unwrap();
-    assert_eq!(encoded_legacy, encoded_native);
+  let encoded_legacy = bincode::serialize(&data).unwrap();
+  let encoded_native = bincode::encode_to_vec(&data, config).unwrap();
+  assert_eq!(encoded_legacy, encoded_native);
 
-    c.bench_function("bench v1-compatible decode (legacy serde)", |b| {
-        b.iter(|| {
-            let _: Vec<MyStruct> =
-                black_box(bincode::deserialize(black_box(&encoded_legacy))).unwrap();
-        });
+  c.bench_function("bench v1-compatible decode (legacy serde)", |b| {
+    b.iter(|| {
+      let _: Vec<MyStruct> = black_box(bincode::deserialize(black_box(&encoded_legacy))).unwrap();
     });
+  });
 
-    c.bench_function("bench native decode (legacy)", |b| {
-        b.iter(|| {
-            let _: (Vec<MyStruct>, _) = black_box(bincode::decode_from_slice(
-                black_box(&encoded_legacy),
-                config,
-            ))
-            .unwrap();
-        });
+  c.bench_function("bench native decode (legacy)", |b| {
+    b.iter(|| {
+      let _: (Vec<MyStruct>, _) = black_box(bincode::decode_from_slice(black_box(&encoded_legacy), config)).unwrap();
     });
+  });
 }
 
 criterion_group!(benches, index_item_decode);

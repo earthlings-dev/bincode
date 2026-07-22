@@ -1,5 +1,7 @@
-use super::{Encoder, write::Writer};
-use crate::{config::Config, utils::Sealed};
+use super::Encoder;
+use super::write::Writer;
+use crate::config::Config;
+use crate::utils::Sealed;
 
 /// An Encoder that writes bytes into a given writer `W`.
 ///
@@ -21,37 +23,40 @@ use crate::{config::Config, utils::Sealed};
 /// assert_eq!(slice, [0, 0, 0, 5]);
 /// ```
 pub struct EncoderImpl<W: Writer, C: Config> {
-    writer: W,
-    config: C,
+  writer: W,
+  config: C,
 }
 
 impl<W: Writer, C: Config> EncoderImpl<W, C> {
-    /// Create a new Encoder
-    pub const fn new(writer: W, config: C) -> EncoderImpl<W, C> {
-        EncoderImpl { writer, config }
+  /// Create a new Encoder
+  pub const fn new(writer: W, config: C) -> EncoderImpl<W, C> {
+    EncoderImpl {
+      writer,
+      config,
     }
+  }
 
-    /// Return the underlying writer
-    #[inline]
-    pub fn into_writer(self) -> W {
-        self.writer
-    }
+  /// Return the underlying writer
+  #[inline]
+  pub fn into_writer(self) -> W {
+    self.writer
+  }
 }
 
 impl<W: Writer, C: Config> Encoder for EncoderImpl<W, C> {
-    type W = W;
+  type W = W;
 
-    type C = C;
+  type C = C;
 
-    #[inline]
-    fn writer(&mut self) -> &mut Self::W {
-        &mut self.writer
-    }
+  #[inline]
+  fn writer(&mut self) -> &mut Self::W {
+    &mut self.writer
+  }
 
-    #[inline]
-    fn config(&self) -> &Self::C {
-        &self.config
-    }
+  #[inline]
+  fn config(&self) -> &Self::C {
+    &self.config
+  }
 }
 
 impl<W: Writer, C: Config> Sealed for EncoderImpl<W, C> {}

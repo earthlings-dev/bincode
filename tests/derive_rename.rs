@@ -9,6 +9,6 @@ extern crate core as bincode;
 #[bincode(crate = "bincode_new")]
 #[allow(dead_code)]
 struct DeriveRenameTest {
-    a: u32,
-    b: u32,
+  a: u32,
+  b: u32,
 }

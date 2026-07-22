@@ -9,5 +9,5 @@ struct AllTypes(BTreeMap<u8, AllTypes>);
 
 #[test]
 fn test_issue_459() {
-    let _result = bincode::encode_to_vec(AllTypes(BTreeMap::new()), bincode::config::standard());
+  let _result = bincode::encode_to_vec(AllTypes(BTreeMap::new()), bincode::config::standard());
 }
