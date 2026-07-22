@@ -1,123 +1,106 @@
 #![cfg(test)]
 
-use ::rand::Rng;
-use bincode_1::Options;
+use ::rand::RngExt;
+use bincode::Options;
 
 mod membership;
 mod misc;
 mod rand;
 mod sway;
 
-pub fn test_same_with_config<T, C, O>(t: &T, bincode_1_options: O, bincode_2_config: C)
+/// Test that all three v3 API surfaces (native encode/decode, serde encode/decode,
+/// and v1 compat serialize/deserialize) produce identical output for a given value
+/// and config.
+pub fn test_same_with_config<T, C>(t: &T, config: C)
 where
-    T: bincode_2::Encode
-        + bincode_2::Decode<()>
+    T: bincode::Encode
+        + bincode::Decode<()>
         + serde::Serialize
         + serde::de::DeserializeOwned
         + core::fmt::Debug
         + PartialEq,
-    C: bincode_2::config::Config,
-    O: bincode_1::Options + Copy,
+    C: bincode::config::Config + Copy,
 {
-    // This is what bincode 1 serializes to. This will be our comparison value.
-    let encoded = bincode_1_options.serialize(t).unwrap();
+    // v1 compat API (Options trait — serialize/deserialize)
+    let v1_encoded = config.serialize(t).unwrap();
 
-    println!("Encoded {t:?} as {encoded:?}");
+    println!("Encoded {t:?} as {v1_encoded:?}");
 
-    // Test bincode 2 encode
-    let bincode_2_output = bincode_2::encode_to_vec(t, bincode_2_config).unwrap();
+    // v2 native API (encode_to_vec)
+    let v2_encoded = bincode::encode_to_vec(t, config).unwrap();
     assert_eq!(
-        encoded,
-        bincode_2_output,
-        "{t:?} serializes differently\nbincode 2 config {:?}",
+        v1_encoded,
+        v2_encoded,
+        "{t:?} encodes differently between v1 compat and native API\nbincode config {:?}",
         core::any::type_name::<C>(),
     );
 
-    // Test bincode 2 serde serialize
-    let bincode_2_serde_output = bincode_2::serde::encode_to_vec(t, bincode_2_config).unwrap();
+    // v2 serde API (serde::encode_to_vec)
+    let v2_serde_encoded = bincode::serde::encode_to_vec(t, config).unwrap();
     assert_eq!(
-        encoded, bincode_2_serde_output,
-        "{t:?} serializes differently"
+        v1_encoded, v2_serde_encoded,
+        "{t:?} encodes differently between v1 compat and serde API"
     );
 
-    // Test bincode 1 deserialize
-    let decoded: T = bincode_1_options.deserialize(&encoded).unwrap();
-    assert_eq!(&decoded, t);
+    // Deserialize via v1 compat API
+    let v1_decoded: T = config.deserialize(&v1_encoded).unwrap();
+    assert_eq!(&v1_decoded, t);
 
-    // Test bincode 2 decode
-    let decoded: T = bincode_2::decode_from_slice(&encoded, bincode_2_config)
+    // Deserialize via v2 native API
+    let v2_decoded: T = bincode::decode_from_slice(&v1_encoded, config).unwrap().0;
+    assert_eq!(&v2_decoded, t);
+
+    // Deserialize via v2 serde API
+    let v2_serde_decoded: T = bincode::serde::decode_from_slice(&v1_encoded, config)
         .unwrap()
         .0;
-    assert_eq!(&decoded, t);
-
-    // Test bincode 2 serde deserialize
-    let decoded: T = bincode_2::serde::decode_from_slice(&encoded, bincode_2_config)
-        .unwrap()
-        .0;
-    assert_eq!(&decoded, t);
+    assert_eq!(&v2_serde_decoded, t);
 }
 
 pub fn test_same<T>(t: T)
 where
-    T: bincode_2::Encode
-        + bincode_2::Decode<()>
+    T: bincode::Encode
+        + bincode::Decode<()>
         + serde::Serialize
         + serde::de::DeserializeOwned
         + core::fmt::Debug
         + PartialEq,
 {
-    test_same_with_config(
-        &t,
-        // This is the config used internally by bincode 1
-        bincode_1::options().with_fixint_encoding(),
-        // Should match `::legacy()`
-        bincode_2::config::legacy(),
-    );
+    // legacy() = fixint + little-endian (matches v1 default internal config)
+    test_same_with_config(&t, bincode::config::legacy());
 
     // Check a bunch of different configs:
     test_same_with_config(
         &t,
-        bincode_1::options()
-            .with_big_endian()
-            .with_varint_encoding(),
-        bincode_2::config::legacy()
+        bincode::config::legacy()
             .with_big_endian()
             .with_variable_int_encoding(),
     );
     test_same_with_config(
         &t,
-        bincode_1::options()
-            .with_little_endian()
-            .with_varint_encoding(),
-        bincode_2::config::legacy()
+        bincode::config::legacy()
             .with_little_endian()
             .with_variable_int_encoding(),
     );
     test_same_with_config(
         &t,
-        bincode_1::options()
-            .with_big_endian()
-            .with_fixint_encoding(),
-        bincode_2::config::legacy()
+        bincode::config::legacy()
             .with_big_endian()
             .with_fixed_int_encoding(),
     );
     test_same_with_config(
         &t,
-        bincode_1::options()
-            .with_little_endian()
-            .with_fixint_encoding(),
-        bincode_2::config::legacy()
+        bincode::config::legacy()
             .with_little_endian()
             .with_fixed_int_encoding(),
     );
 }
 
-pub fn gen_string(rng: &mut impl Rng) -> String {
-    let len = rng.gen_range(0..100usize);
+pub fn gen_string(rng: &mut impl RngExt) -> String {
+    let len = rng.random_range(0..100usize);
     let mut result = String::with_capacity(len * 4);
     for _ in 0..len {
-        result.push(rng.gen_range('\0'..char::MAX));
+        result.push(rng.random_range('\0'..char::MAX));
     }
     result
 }

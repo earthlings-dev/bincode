@@ -1,8 +1,9 @@
 // https://github.com/bincode-org/bincode/issues/618
 
 use bincode::{Decode, Encode};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use serde::{Deserialize, Serialize};
+use std::hint::black_box;
 
 #[derive(Serialize, Deserialize, Default, Encode, Decode)]
 pub struct MyStruct {
@@ -30,9 +31,9 @@ fn build_data(size: usize) -> Vec<MyStruct> {
 fn index_item_decode(c: &mut Criterion) {
     let data = build_data(100);
 
-    c.bench_function("bench v1", |b| {
+    c.bench_function("bench v1 (legacy serde)", |b| {
         b.iter(|| {
-            let _ = black_box(bincode_1::serialize(black_box(&data))).unwrap();
+            let _ = black_box(bincode::serialize(black_box(&data))).unwrap();
         });
     });
 
@@ -50,21 +51,24 @@ fn index_item_decode(c: &mut Criterion) {
         });
     });
 
-    let encodedv1 = bincode_1::serialize(&data).unwrap();
+    let encoded_legacy = bincode::serialize(&data).unwrap();
     let encodedv2 = bincode::encode_to_vec(&data, config).unwrap();
-    assert_eq!(encodedv1, encodedv2);
+    assert_eq!(encoded_legacy, encodedv2);
 
-    c.bench_function("bench v1 decode", |b| {
+    c.bench_function("bench v1 decode (legacy serde)", |b| {
         b.iter(|| {
             let _: Vec<MyStruct> =
-                black_box(bincode_1::deserialize(black_box(&encodedv1))).unwrap();
+                black_box(bincode::deserialize(black_box(&encoded_legacy))).unwrap();
         });
     });
 
     c.bench_function("bench v2 decode (legacy)", |b| {
         b.iter(|| {
-            let _: (Vec<MyStruct>, _) =
-                black_box(bincode::decode_from_slice(black_box(&encodedv1), config)).unwrap();
+            let _: (Vec<MyStruct>, _) = black_box(bincode::decode_from_slice(
+                black_box(&encoded_legacy),
+                config,
+            ))
+            .unwrap();
         });
     });
 }
