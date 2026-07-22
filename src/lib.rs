@@ -11,7 +11,7 @@
 //!
 //! # Serde
 //!
-//! Starting from bincode 2, serde is now an optional dependency. If you want to use serde, please enable the `serde` feature. See [Features](#features) for more information.
+//! Serde is an optional dependency. To use serde, enable the `serde` feature. See [Features](#features) for more information.
 //!
 //! # Features
 //!
@@ -71,7 +71,7 @@
 //! [`net::TcpStream`]: std::net::TcpStream
 //!
 
-#![doc(html_root_url = "https://docs.rs/bincode/3.0.0")]
+#![doc(html_root_url = "https://docs.rs/bincode/4.0.0")]
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 

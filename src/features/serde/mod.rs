@@ -58,12 +58,30 @@
 //! - The issues documented above with attributes.
 //! - Serde has chosen to not have a MSRV ([source](https://github.com/serde-rs/serde/pull/2257)). We think MSRV is important, bincode 1 still compiles with rust 1.18.
 //! - Before serde we had rustc-serializer. Serde has more than replaced rustc-serializer, but we can imagine a future where serde is replaced by something else.
-//! - We believe that less dependencies is better, and that you should be able to choose your own dependencies. If you disable all features, bincode 2 only has 1 dependency. ([`unty`], a micro crate we manage ourselves)
+//! - We believe that fewer dependencies are better and that you should be able to choose your own dependencies. With all features disabled, bincode has one direct dependency: [`unty`], a micro crate we manage ourselves.
 //!
 //! **note:** just because we're making serde an optional dependency, it does not mean we're dropping support for serde. Serde will still be fully supported, we're just giving you the option to not use it.
 //!
+//! # Seeded decoding
+//!
+//! Serde's [`DeserializeSeed`](serde::de::DeserializeSeed) API is available for
+//! every supported input source. The direct functions and v1-compatible
+//! [`Options`] façade form the following matrix:
+//!
+//! | Source | Direct seeded API | `Options` façade |
+//! |---|---|---|
+//! | Borrowed slice | [`seed_decode_from_slice`] | `Options::deserialize_seed` |
+//! | Bincode [`Reader`](crate::de::read::Reader) | [`seed_decode_from_reader`] | `Options::deserialize_from_reader_seed` |
+//! | [`std::io::Read`] when `std` is enabled | [`seed_decode_from_std_read`] | `Options::deserialize_from_seed` |
+//!
+//! Each reader API consumes only the bytes needed by the seed and preserves the
+//! underlying reader's error boundary. In particular, a truncated bincode
+//! `Reader` reports [`DecodeError::UnexpectedEnd`](crate::error::DecodeError::UnexpectedEnd),
+//! while a truncated `std::io::Read` reports [`DecodeError::Io`](crate::error::DecodeError::Io).
+//!
 //! [Decode]: ../de/trait.Decode.html
 //! [Encode]: ../enc/trait.Encode.html
+//! [`Options`]: compat::Options
 //! [`unty`]: https://crates.io/crates/unty
 
 pub mod compat;
@@ -71,12 +89,14 @@ mod de_borrowed;
 mod de_owned;
 mod ser;
 
-#[cfg(feature = "std")]
-pub use self::compat::deserialize_from;
+#[cfg(feature = "alloc")]
+pub use self::compat::serialize;
 pub use self::compat::{
     DefaultOptions, Options, deserialize, deserialize_from_reader, deserialize_in_place, options,
-    serialize, serialize_into, serialized_size,
+    serialized_size,
 };
+#[cfg(feature = "std")]
+pub use self::compat::{deserialize_from, serialize_into};
 pub use self::de_borrowed::*;
 pub use self::de_owned::*;
 pub use self::ser::*;
@@ -121,9 +141,6 @@ impl serde::de::Error for crate::error::DecodeError {
     }
 }
 
-#[cfg(not(feature = "std"))]
-impl serde::de::StdError for crate::error::DecodeError {}
-
 #[cfg(not(feature = "alloc"))]
 impl serde::de::Error for crate::error::DecodeError {
     fn custom<T>(_: T) -> Self
@@ -161,9 +178,6 @@ impl serde::ser::Error for crate::error::EncodeError {
         Self::OtherString(msg.to_string())
     }
 }
-
-#[cfg(not(feature = "std"))]
-impl serde::de::StdError for crate::error::EncodeError {}
 
 #[cfg(not(feature = "alloc"))]
 impl serde::ser::Error for crate::error::EncodeError {

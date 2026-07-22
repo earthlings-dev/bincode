@@ -50,7 +50,7 @@ pub struct Configuration<E = LittleEndian, I = Varint, L = NoLimit, T = AllowTra
 // - Add this generic to _every_ function in `Configuration`
 // - Add your new methods
 
-/// The default config for bincode 2.0. By default this will be:
+/// The standard bincode configuration. By default this will be:
 /// - Little endian
 /// - Variable int encoding
 pub const fn standard() -> Configuration {
@@ -244,24 +244,24 @@ where
 }
 
 /// Encodes all integer types in big endian.
-#[derive(Copy, Clone)]
-pub struct BigEndian {}
+#[derive(Copy, Clone, Debug)]
+pub struct BigEndian;
 
 impl InternalEndianConfig for BigEndian {
     const ENDIAN: Endianness = Endianness::Big;
 }
 
 /// Encodes all integer types in little endian.
-#[derive(Copy, Clone)]
-pub struct LittleEndian {}
+#[derive(Copy, Clone, Debug)]
+pub struct LittleEndian;
 
 impl InternalEndianConfig for LittleEndian {
     const ENDIAN: Endianness = Endianness::Little;
 }
 
 /// Encodes all integer types in the native endian of the target platform.
-#[derive(Copy, Clone)]
-pub struct NativeEndian {}
+#[derive(Copy, Clone, Debug)]
+pub struct NativeEndian;
 
 impl InternalEndianConfig for NativeEndian {
     const ENDIAN: Endianness = if cfg!(target_endian = "big") {
@@ -272,45 +272,45 @@ impl InternalEndianConfig for NativeEndian {
 }
 
 /// Use fixed-size integer encoding.
-#[derive(Copy, Clone)]
-pub struct Fixint {}
+#[derive(Copy, Clone, Debug)]
+pub struct Fixint;
 
 impl InternalIntEncodingConfig for Fixint {
     const INT_ENCODING: IntEncoding = IntEncoding::Fixed;
 }
 
 /// Use variable integer encoding.
-#[derive(Copy, Clone)]
-pub struct Varint {}
+#[derive(Copy, Clone, Debug)]
+pub struct Varint;
 
 impl InternalIntEncodingConfig for Varint {
     const INT_ENCODING: IntEncoding = IntEncoding::Variable;
 }
 
 /// Sets an unlimited byte limit.
-#[derive(Copy, Clone)]
-pub struct NoLimit {}
+#[derive(Copy, Clone, Debug)]
+pub struct NoLimit;
 impl InternalLimitConfig for NoLimit {
     const LIMIT: Option<usize> = None;
 }
 
 /// Sets the byte limit to N.
-#[derive(Copy, Clone)]
-pub struct Limit<const N: usize> {}
+#[derive(Copy, Clone, Debug)]
+pub struct Limit<const N: usize>;
 impl<const N: usize> InternalLimitConfig for Limit<N> {
     const LIMIT: Option<usize> = Some(N);
 }
 
 /// Allows trailing bytes after deserialization from a slice.
-#[derive(Copy, Clone)]
-pub struct AllowTrailing {}
+#[derive(Copy, Clone, Debug)]
+pub struct AllowTrailing;
 impl InternalTrailingConfig for AllowTrailing {
     const TRAILING_REJECT: bool = false;
 }
 
 /// Rejects trailing bytes after deserialization from a slice.
-#[derive(Copy, Clone)]
-pub struct RejectTrailing {}
+#[derive(Copy, Clone, Debug)]
+pub struct RejectTrailing;
 impl InternalTrailingConfig for RejectTrailing {
     const TRAILING_REJECT: bool = true;
 }

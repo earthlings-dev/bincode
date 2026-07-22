@@ -1,7 +1,7 @@
 //! Bincode v1-compatible serde API surface.
 //!
 //! This module provides the convenience functions and `Options` builder pattern
-//! from bincode v1.3.3, built on top of bincode v2's architecture.
+//! from bincode v1.3.3, built on top of bincode's current native architecture.
 
 use crate::config::{Config, Configuration, LittleEndian, NoLimit, RejectTrailing, Varint};
 use crate::de::BorrowDecoder;
@@ -26,6 +26,8 @@ pub type DefaultOptions = Configuration<LittleEndian, Varint, NoLimit, RejectTra
 /// # Example
 ///
 /// ```
+/// # #[cfg(feature = "alloc")]
+/// # {
 /// use bincode::Options;
 ///
 /// let val: u32 = 42;
@@ -33,6 +35,7 @@ pub type DefaultOptions = Configuration<LittleEndian, Varint, NoLimit, RejectTra
 ///     .with_big_endian()
 ///     .serialize(&val)
 ///     .unwrap();
+/// # }
 /// ```
 pub fn options() -> DefaultOptions {
     crate::config::standard().reject_trailing_bytes()
@@ -95,7 +98,7 @@ pub fn deserialize_from<R: std::io::Read, T: ::serde::de::DeserializeOwned>(
 
 /// Deserialize a value from a [`Reader`] using the legacy configuration.
 ///
-/// This is the v2 equivalent of bincode v1's `bincode::deserialize_from_custom()`.
+/// This is the bincode [`Reader`] counterpart to v1's `bincode::deserialize_from_custom()`.
 pub fn deserialize_from_reader<R: Reader, T: ::serde::de::DeserializeOwned>(
     reader: R,
 ) -> Result<T, DecodeError> {
@@ -134,6 +137,8 @@ pub fn deserialize_in_place<'a, T: ::serde::Deserialize<'a>>(
 /// # Example
 ///
 /// ```
+/// # #[cfg(feature = "alloc")]
+/// # {
 /// use bincode::Options;
 ///
 /// let val: u32 = 42;
@@ -150,6 +155,7 @@ pub fn deserialize_in_place<'a, T: ::serde::Deserialize<'a>>(
 ///     .unwrap();
 ///
 /// assert_eq!(val, decoded);
+/// # }
 /// ```
 pub trait Options: Config + Sized {
     /// Serialize a value to a `Vec<u8>`.
@@ -230,14 +236,12 @@ pub trait Options: Config + Sized {
         seed: T,
         mut reader: R,
     ) -> Result<T::Value, DecodeError> {
-        let mut serde_decoder =
-            super::de_owned::OwnedSerdeDecoder::from_std_read(&mut reader, *self);
-        seed.deserialize(serde_decoder.as_deserializer())
+        super::seed_decode_from_std_read(seed, &mut reader, *self)
     }
 
     /// Deserialize a value from a [`Reader`].
     ///
-    /// This is the v2 equivalent of bincode v1's `deserialize_from_custom()`.
+    /// This is the bincode [`Reader`] counterpart to v1's `deserialize_from_custom()`.
     fn deserialize_from_reader<R: Reader, T: ::serde::de::DeserializeOwned>(
         &self,
         reader: R,
@@ -251,8 +255,7 @@ pub trait Options: Config + Sized {
         seed: T,
         reader: R,
     ) -> Result<T::Value, DecodeError> {
-        let mut serde_decoder = super::de_owned::OwnedSerdeDecoder::from_reader(reader, *self);
-        seed.deserialize(serde_decoder.as_deserializer())
+        super::seed_decode_from_reader(seed, reader, *self)
     }
 
     /// Deserialize a value in place from a byte slice.

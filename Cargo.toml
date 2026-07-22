@@ -1,29 +1,39 @@
 [workspace]
 members = ["derive", "compatibility"]
 
-[package]
-name = "bincode"
-version = "3.0.0"
+[workspace.package]
+version = "4.0.0"
 authors = [
     "Ty Overby <ty@pre-alpha.com>",
     "Zoey Riordan <zoey@dos.cafe>",
     "Victor Koenders <bincode@trangar.com>",
+    "Takumi Shimada <hello@takumi.earth>",
 ]
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/bincode-org/bincode"
+documentation = "https://docs.rs/bincode"
+
+[package]
+name = "bincode"
+version.workspace = true
+authors.workspace = true
 exclude = ["logo.svg", "examples/*", ".gitignore", ".github/"]
-rust-version = "1.93.0"
+rust-version.workspace = true
 
 publish = true
 
-repository = "https://github.com/bincode-org/bincode"
-documentation = "https://docs.rs/bincode"
-readme = "./readme.md"
+repository.workspace = true
+documentation.workspace = true
+readme = "./README.md"
 categories = ["encoding", "network-programming"]
 keywords = ["binary", "encode", "decode", "serialize", "deserialize"]
 
-license = "MIT"
+license.workspace = true
 description = "A binary serialization / deserialization strategy for transforming structs into bytes and vice versa!"
 
-edition = "2024"
+edition.workspace = true
 
 [features]
 default = ["std", "derive", "serde"]
@@ -32,7 +42,8 @@ alloc = ["serde?/alloc"]
 derive = ["bincode_derive"]
 
 [workspace.dependencies]
-bincode_derive = { path = "derive", version = "3.0.0" }
+bincode = { path = ".", version = "4.0.0" }
+bincode_derive = { path = "derive", version = "4.0.0" }
 serde = { version = "1.0", default-features = false }
 serde_derive = "1.0"
 rand = "0.10"
@@ -50,14 +61,14 @@ unty = { workspace = true }
 ouroboros = "0.18.5"
 serde_derive = { workspace = true }
 serde_json = { version = "1.0", default-features = false }
-tempfile = "3.25"
+tempfile = "3.27"
 criterion = { workspace = true }
 rand = { workspace = true }
-uuid = { version = "1.20", features = ["serde"] }
+uuid = { version = "1.24", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-glam = { version = "0.32", features = ["serde"] }
+glam = { version = "0.33", features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
-bumpalo = { version = "3.19.1", features = ["collections"] }
+bumpalo = { version = "3.20.3", features = ["collections"] }
 
 [[bench]]
 name = "varint"

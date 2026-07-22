@@ -82,6 +82,29 @@ pub fn decode_from_std_read<'r, D: DeserializeOwned, C: Config, R: std::io::Read
     D::deserialize(serde_decoder.as_deserializer())
 }
 
+/// Decode from an [`std::io::Read`] implementation with the given [`Config`]
+/// using a [`DeserializeSeed`].
+///
+/// The reader is left immediately after the decoded value. This function is
+/// useful when deserialization requires caller-provided state or constructs a
+/// value that does not implement [`DeserializeOwned`].
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+pub fn seed_decode_from_std_read<'de, 'r, D, C, R>(
+    seed: D,
+    src: &'r mut R,
+    config: C,
+) -> Result<D::Value, DecodeError>
+where
+    D: DeserializeSeed<'de>,
+    C: Config,
+    R: std::io::Read,
+{
+    let mut serde_decoder =
+        OwnedSerdeDecoder::<DecoderImpl<IoReader<&'r mut R>, C, ()>>::from_std_read(src, config);
+    seed.deserialize(serde_decoder.as_deserializer())
+}
+
 /// Attempt to decode a given type `D` from the given [Reader].
 ///
 /// See the [config] module for more information on configurations.
@@ -93,6 +116,26 @@ pub fn decode_from_reader<D: DeserializeOwned, R: Reader, C: Config>(
 ) -> Result<D, DecodeError> {
     let mut serde_decoder = OwnedSerdeDecoder::<DecoderImpl<R, C, ()>>::from_reader(reader, config);
     D::deserialize(serde_decoder.as_deserializer())
+}
+
+/// Decode from a bincode [`Reader`] with the given [`Config`] using a
+/// [`DeserializeSeed`].
+///
+/// Pass the reader by mutable reference when it needs to be reused after the
+/// decoded value. The blanket [`Reader`] implementation for `&mut R` preserves
+/// the caller's reader state.
+pub fn seed_decode_from_reader<'de, D, R, C>(
+    seed: D,
+    reader: R,
+    config: C,
+) -> Result<D::Value, DecodeError>
+where
+    D: DeserializeSeed<'de>,
+    R: Reader,
+    C: Config,
+{
+    let mut serde_decoder = OwnedSerdeDecoder::<DecoderImpl<R, C, ()>>::from_reader(reader, config);
+    seed.deserialize(serde_decoder.as_deserializer())
 }
 
 pub(super) struct SerdeDecoder<'a, DE: Decoder> {

@@ -1,3 +1,5 @@
+#![cfg(all(feature = "serde", feature = "alloc"))]
+
 use bincode::Options;
 use serde_derive::{Deserialize, Serialize};
 
@@ -95,6 +97,7 @@ fn serialized_size_via_options() {
 }
 
 #[test]
+#[cfg(feature = "std")]
 fn serialize_into_deserialize_from() {
     use std::io::Cursor;
     let val = sample();

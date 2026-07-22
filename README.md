@@ -72,7 +72,7 @@ The encoding format is stable, provided the same configuration is used.
 This should ensure that later versions can still read data produced by a previous versions of the library if no major version change
 has occurred.
 
-Bincode 1 and 2 are completely compatible if the same configuration is used.
+Bincode's compatibility surfaces preserve the bincode 1 wire format when the same configuration is used.
 
 Bincode is invariant over byte-order, making an exchange between different
 architectures possible. It is also rather space efficient, as it stores no
@@ -99,7 +99,7 @@ maximum size limit. Malicious inputs will fail upon deserialization.
 
 ### What is Bincode's MSRV (minimum supported Rust version)?
 
-Bincode 2.0 has an MSRV of 1.85.0. Any changes to the MSRV are considered a breaking change for semver purposes, except when certain features are enabled. Features affecting MSRV are documented in the crate root.
+Bincode 4.0 has an MSRV of 1.97. Any changes to the MSRV are considered a breaking change for semver purposes, except when certain features are enabled. Features affecting MSRV are documented in the crate root.
 
 ### Why does bincode not respect `#[repr(u8)]`?
 

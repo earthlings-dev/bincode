@@ -8,8 +8,8 @@ mod misc;
 mod rand;
 mod sway;
 
-/// Test that all three v3 API surfaces (native encode/decode, serde encode/decode,
-/// and v1 compat serialize/deserialize) produce identical output for a given value
+/// Test that all three API surfaces (native encode/decode, serde encode/decode,
+/// and v1-compatible serialize/deserialize) produce identical output for a given value
 /// and config.
 pub fn test_same_with_config<T, C>(t: &T, config: C)
 where
@@ -21,40 +21,42 @@ where
         + PartialEq,
     C: bincode::config::Config + Copy,
 {
-    // v1 compat API (Options trait — serialize/deserialize)
-    let v1_encoded = config.serialize(t).unwrap();
+    // v1-compatible API (Options trait — serialize/deserialize)
+    let compat_encoded = config.serialize(t).unwrap();
 
-    println!("Encoded {t:?} as {v1_encoded:?}");
+    println!("Encoded {t:?} as {compat_encoded:?}");
 
-    // v2 native API (encode_to_vec)
-    let v2_encoded = bincode::encode_to_vec(t, config).unwrap();
+    // Native API (encode_to_vec)
+    let native_encoded = bincode::encode_to_vec(t, config).unwrap();
     assert_eq!(
-        v1_encoded,
-        v2_encoded,
-        "{t:?} encodes differently between v1 compat and native API\nbincode config {:?}",
+        compat_encoded,
+        native_encoded,
+        "{t:?} encodes differently between the v1-compatible and native APIs\nbincode config {:?}",
         core::any::type_name::<C>(),
     );
 
-    // v2 serde API (serde::encode_to_vec)
-    let v2_serde_encoded = bincode::serde::encode_to_vec(t, config).unwrap();
+    // Serde API (serde::encode_to_vec)
+    let serde_encoded = bincode::serde::encode_to_vec(t, config).unwrap();
     assert_eq!(
-        v1_encoded, v2_serde_encoded,
-        "{t:?} encodes differently between v1 compat and serde API"
+        compat_encoded, serde_encoded,
+        "{t:?} encodes differently between the v1-compatible and serde APIs"
     );
 
-    // Deserialize via v1 compat API
-    let v1_decoded: T = config.deserialize(&v1_encoded).unwrap();
-    assert_eq!(&v1_decoded, t);
+    // Deserialize via the v1-compatible API
+    let compat_decoded: T = config.deserialize(&compat_encoded).unwrap();
+    assert_eq!(&compat_decoded, t);
 
-    // Deserialize via v2 native API
-    let v2_decoded: T = bincode::decode_from_slice(&v1_encoded, config).unwrap().0;
-    assert_eq!(&v2_decoded, t);
-
-    // Deserialize via v2 serde API
-    let v2_serde_decoded: T = bincode::serde::decode_from_slice(&v1_encoded, config)
+    // Deserialize via the native API
+    let native_decoded: T = bincode::decode_from_slice(&compat_encoded, config)
         .unwrap()
         .0;
-    assert_eq!(&v2_serde_decoded, t);
+    assert_eq!(&native_decoded, t);
+
+    // Deserialize via the serde API
+    let serde_decoded: T = bincode::serde::decode_from_slice(&compat_encoded, config)
+        .unwrap()
+        .0;
+    assert_eq!(&serde_decoded, t);
 }
 
 pub fn test_same<T>(t: T)

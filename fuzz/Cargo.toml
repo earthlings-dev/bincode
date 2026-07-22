@@ -1,10 +1,10 @@
 [package]
 name = "bincode-fuzz"
-version = "3.0.0"
+version = "4.0.0"
 authors = ["Automatically generated"]
 publish = false
 edition = "2024"
-rust-version = "1.93.0"
+rust-version = "1.97"
 
 [package.metadata]
 cargo-fuzz = true

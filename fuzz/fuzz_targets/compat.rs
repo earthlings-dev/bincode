@@ -52,9 +52,9 @@ enum AllTypes {
 fuzz_target!(|data: &[u8]| {
     let config = bincode::config::legacy().with_limit::<1024>();
 
-    // v1 compat API (Options::deserialize uses serde internally)
+    // v1-compatible API (Options::deserialize uses serde internally)
     let compat_result: Result<AllTypes, _> = config.deserialize(data);
-    // v2 native API (decode_from_slice uses bincode::Decode)
+    // Native API (decode_from_slice uses bincode::Decode)
     let native_result: Result<(AllTypes, _), _> = bincode::decode_from_slice(data, config);
 
     match (&compat_result, &native_result) {
@@ -64,15 +64,15 @@ fuzz_target!(|data: &[u8]| {
         // Both succeed — values must match
         (Ok(compat_val), Ok((native_val, _))) if compat_val != native_val => {
             println!("Bytes:        {:?}", data);
-            println!("v1 compat:    {:?}", compat_val);
-            println!("v2 native:    {:?}", native_val);
-            panic!("v1 compat and v2 native decoded different values");
+            println!("v1-compatible: {:?}", compat_val);
+            println!("native:        {:?}", native_val);
+            panic!("v1-compatible and native APIs decoded different values");
         }
         // One succeeds, one fails — mismatch
         (Ok(_), Err(_)) | (Err(_), Ok(_)) => {
             println!("Bytes:        {:?}", data);
-            println!("v1 compat:    {:?}", compat_result);
-            println!("v2 native:    {:?}", native_result);
+            println!("v1-compatible: {:?}", compat_result);
+            println!("native:        {:?}", native_result);
             panic!("one API succeeded while the other failed");
         }
         // Both succeed with equal values, or both fail — fine

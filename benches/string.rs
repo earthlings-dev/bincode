@@ -31,38 +31,38 @@ fn build_data(size: usize) -> Vec<MyStruct> {
 fn index_item_decode(c: &mut Criterion) {
     let data = build_data(100);
 
-    c.bench_function("bench v1 (legacy serde)", |b| {
+    c.bench_function("bench v1-compatible (legacy serde)", |b| {
         b.iter(|| {
             let _ = black_box(bincode::serialize(black_box(&data))).unwrap();
         });
     });
 
     let config = bincode::config::standard();
-    c.bench_function("bench v2 (standard)", |b| {
+    c.bench_function("bench native (standard)", |b| {
         b.iter(|| {
             let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
         });
     });
 
     let config = bincode::config::legacy();
-    c.bench_function("bench v2 (legacy)", |b| {
+    c.bench_function("bench native (legacy)", |b| {
         b.iter(|| {
             let _ = black_box(bincode::encode_to_vec(black_box(&data), config)).unwrap();
         });
     });
 
     let encoded_legacy = bincode::serialize(&data).unwrap();
-    let encodedv2 = bincode::encode_to_vec(&data, config).unwrap();
-    assert_eq!(encoded_legacy, encodedv2);
+    let encoded_native = bincode::encode_to_vec(&data, config).unwrap();
+    assert_eq!(encoded_legacy, encoded_native);
 
-    c.bench_function("bench v1 decode (legacy serde)", |b| {
+    c.bench_function("bench v1-compatible decode (legacy serde)", |b| {
         b.iter(|| {
             let _: Vec<MyStruct> =
                 black_box(bincode::deserialize(black_box(&encoded_legacy))).unwrap();
         });
     });
 
-    c.bench_function("bench v2 decode (legacy)", |b| {
+    c.bench_function("bench native decode (legacy)", |b| {
         b.iter(|| {
             let _: (Vec<MyStruct>, _) = black_box(bincode::decode_from_slice(
                 black_box(&encoded_legacy),
