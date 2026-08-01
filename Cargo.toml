@@ -50,6 +50,8 @@ rand = "0.10"
 criterion = "0.8"
 unty = "0.0.5"
 virtue = "0.0.19"
+template-core = { version = "0.3.0", git = "https://github.com/earthlings-dev/template-rs.git", branch = "main"}
+template-stask = { version = "0.3.0", git = "https://github.com/earthlings-dev/template-rs.git", branch = "main"}
 
 [dependencies]
 bincode_derive = { workspace = true, optional = true }

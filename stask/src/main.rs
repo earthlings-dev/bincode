@@ -4,5 +4,5 @@ use std::process::ExitCode;
 
 /// Run the local extension-only runner.
 fn main() -> ExitCode {
-  xtask::run()
+  stask::run()
 }
