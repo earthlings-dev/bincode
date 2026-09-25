@@ -1,4 +1,4 @@
-#![cfg(feature = "derive")]
+#![cfg(all(feature = "derive", feature = "alloc"))]
 
 #[derive(Debug, PartialEq, bincode::Encode, bincode::Decode)]
 pub struct Eg<D, E> {

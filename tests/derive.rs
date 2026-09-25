@@ -365,6 +365,7 @@ fn test_enum_with_generics_roundtrip() {
   assert_eq!(start, decoded);
 }
 
+#[cfg(feature = "alloc")]
 mod derive_with_polluted_scope {
   // These functions intentionally shadow Result::Ok and Result::Err to verify
   // that the derive macro uses qualified paths.

@@ -10,10 +10,9 @@ authors = [
     "Takumi Shimada <hello@takumi.earth>",
 ]
 edition = "2024"
-rust-version = "1.97"
+rust-version = "1.98"
 license = "MIT"
-repository = "https://github.com/bincode-org/bincode"
-documentation = "https://docs.rs/bincode"
+repository = "https://github.com/strict-rs/strict-bincode/"
 
 [package]
 name = "bincode"
@@ -21,18 +20,12 @@ version.workspace = true
 authors.workspace = true
 exclude = ["logo.svg", "examples/*", ".gitignore", ".github/"]
 rust-version.workspace = true
-
-publish = true
-
 repository.workspace = true
-documentation.workspace = true
 readme = "./README.md"
 categories = ["encoding", "network-programming"]
 keywords = ["binary", "encode", "decode", "serialize", "deserialize"]
-
 license.workspace = true
 description = "A binary serialization / deserialization strategy for transforming structs into bytes and vice versa!"
-
 edition.workspace = true
 
 [features]
@@ -66,7 +59,7 @@ serde_json = { version = "1.0", default-features = false }
 tempfile = "3.27"
 criterion = { workspace = true }
 rand = { workspace = true }
-uuid = { version = "1.24", features = ["serde"] }
+uuid = { version = "1.26", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 glam = { version = "0.33", features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
@@ -75,14 +68,17 @@ bumpalo = { version = "3.20.3", features = ["collections"] }
 [[bench]]
 name = "varint"
 harness = false
+required-features = ["std"]
 
 [[bench]]
 name = "inline"
 harness = false
+required-features = ["alloc"]
 
 [[bench]]
 name = "string"
 harness = false
+required-features = ["alloc", "derive", "serde"]
 
 [profile.bench]
 codegen-units = 1

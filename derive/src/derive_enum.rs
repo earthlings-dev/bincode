@@ -147,8 +147,8 @@ impl DeriveEnum {
     // Where allowed is either:
     // - bincode::error::AllowedEnumVariants::Range { min: 0, max: <max> } if we have no fixed value
     //   variants
-    // - bincode::error::AllowedEnumVariants::Allowed(&[<variant1>, <variant2>, ...]) if we have fixed
-    //   value variants
+    // - bincode::error::AllowedEnumVariants::Allowed(&[<variant1>, <variant2>, ...]) if we have
+    //   fixed value variants
     result.ident_str("variant");
     result.puncts("=>");
     result.push_parsed("core::result::Result::Err")?;
